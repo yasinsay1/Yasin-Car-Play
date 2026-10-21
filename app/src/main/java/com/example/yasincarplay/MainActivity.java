@@ -26,10 +26,12 @@ import java.util.Locale;
 
 public class MainActivity extends Activity {
 
-    private static final String PREFS = "yasincarplay";
-    private static final String KEY_URL = "m3u_url";
+    static final String PREFS = "yasincarplay";
+    static final String KEY_URL = "m3u_url";
+    static final String KEY_RADIO_URL = "radio_url";
 
     private EditText urlInput;
+    private EditText radioInput;
     private EditText searchInput;
     private TextView status;
     private ChannelAdapter adapter;
@@ -67,6 +69,14 @@ public class MainActivity extends Activity {
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT));
 
+        radioInput = new EditText(this);
+        radioInput.setHint("Radyo liste adresi (isteğe bağlı, araçta çalar)");
+        radioInput.setSingleLine(true);
+        radioInput.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_URI);
+        root.addView(radioInput, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT));
+
         Button loadButton = new Button(this);
         loadButton.setText("Kanalları Yükle");
         root.addView(loadButton, new LinearLayout.LayoutParams(
@@ -99,7 +109,14 @@ public class MainActivity extends Activity {
         setContentView(root);
 
         loadButton.setOnClickListener(v -> {
+            String radioAddress = radioInput.getText().toString().trim();
+            getSharedPreferences(PREFS, MODE_PRIVATE)
+                    .edit().putString(KEY_RADIO_URL, radioAddress).apply();
             String address = urlInput.getText().toString().trim();
+            if (address.isEmpty() && !radioAddress.isEmpty()) {
+                status.setText("Radyo adresi kaydedildi.");
+                return;
+            }
             if (!address.startsWith("http://") && !address.startsWith("https://")) {
                 status.setText("Adres http:// veya https:// ile başlamalı.");
                 return;
@@ -123,6 +140,10 @@ public class MainActivity extends Activity {
         });
 
         SharedPreferences prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
+        String savedRadio = prefs.getString(KEY_RADIO_URL, "");
+        if (savedRadio != null && !savedRadio.isEmpty()) {
+            radioInput.setText(savedRadio);
+        }
         String saved = prefs.getString(KEY_URL, "");
         if (saved != null && !saved.isEmpty()) {
             urlInput.setText(saved);
@@ -149,7 +170,7 @@ public class MainActivity extends Activity {
         }).start();
     }
 
-    private static List<M3uParser.Channel> download(String address) throws IOException {
+    static List<M3uParser.Channel> download(String address) throws IOException {
         HttpURLConnection conn = (HttpURLConnection) new URL(address).openConnection();
         try {
             conn.setConnectTimeout(15000);
