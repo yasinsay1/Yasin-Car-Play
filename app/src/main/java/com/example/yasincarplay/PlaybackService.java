@@ -142,7 +142,9 @@ public class PlaybackService extends MediaLibraryService {
 
             SharedPreferences prefs = getSharedPreferences(MainActivity.PREFS, MODE_PRIVATE);
             final String address = prefs.getString(key, "");
-            if (address == null || address.isEmpty()) {
+            final boolean builtInRadio = RADIO_ID.equals(parentId)
+                    && (address == null || address.isEmpty());
+            if (!builtInRadio && (address == null || address.isEmpty())) {
                 return Futures.immediateFuture(
                         LibraryResult.ofItemList(ImmutableList.<MediaItem>of(), params));
             }
@@ -154,7 +156,9 @@ public class PlaybackService extends MediaLibraryService {
             final LibraryParams requestedParams = params;
             new Thread(() -> {
                 try {
-                    List<M3uParser.Channel> channels = MainActivity.download(address);
+                    List<M3uParser.Channel> channels = builtInRadio
+                            ? RadioBrowser.topTurkishStations()
+                            : MainActivity.download(address);
                     List<MediaItem> items = new ArrayList<>();
                     for (M3uParser.Channel channel : channels) {
                         items.add(channelItem(channel));

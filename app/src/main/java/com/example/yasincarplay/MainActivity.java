@@ -70,7 +70,7 @@ public class MainActivity extends Activity {
                 ViewGroup.LayoutParams.WRAP_CONTENT));
 
         radioInput = new EditText(this);
-        radioInput.setHint("Radyo liste adresi (isteğe bağlı, araçta çalar)");
+        radioInput.setHint("Radyo liste adresi (boşsa Türkiye radyoları)");
         radioInput.setSingleLine(true);
         radioInput.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_URI);
         root.addView(radioInput, new LinearLayout.LayoutParams(
@@ -80,6 +80,12 @@ public class MainActivity extends Activity {
         Button loadButton = new Button(this);
         loadButton.setText("Kanalları Yükle");
         root.addView(loadButton, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT));
+
+        Button radioButton = new Button(this);
+        radioButton.setText("Radyoları Göster");
+        root.addView(radioButton, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT));
 
@@ -124,6 +130,13 @@ public class MainActivity extends Activity {
             loadChannels(address);
         });
 
+        radioButton.setOnClickListener(v -> {
+            String radioAddress = radioInput.getText().toString().trim();
+            getSharedPreferences(PREFS, MODE_PRIVATE)
+                    .edit().putString(KEY_RADIO_URL, radioAddress).apply();
+            loadRadio();
+        });
+
         searchInput.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
@@ -166,6 +179,26 @@ public class MainActivity extends Activity {
             } catch (Exception e) {
                 final String message = e.getMessage() == null ? e.toString() : e.getMessage();
                 runOnUiThread(() -> status.setText("Liste yüklenemedi: " + message));
+            }
+        }).start();
+    }
+
+    private void loadRadio() {
+        final String radioAddress = radioInput.getText().toString().trim();
+        status.setText("Radyolar yükleniyor...");
+        new Thread(() -> {
+            try {
+                final List<M3uParser.Channel> result = radioAddress.isEmpty()
+                        ? RadioBrowser.topTurkishStations()
+                        : download(radioAddress);
+                runOnUiThread(() -> {
+                    allChannels.clear();
+                    allChannels.addAll(result);
+                    applyFilter();
+                });
+            } catch (Exception e) {
+                final String message = e.getMessage() == null ? e.toString() : e.getMessage();
+                runOnUiThread(() -> status.setText("Radyolar yüklenemedi: " + message));
             }
         }).start();
     }
