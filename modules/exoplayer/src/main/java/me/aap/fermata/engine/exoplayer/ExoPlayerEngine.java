@@ -27,6 +27,7 @@ import androidx.media3.common.util.Util;
 import androidx.media3.datasource.DataSource;
 import androidx.media3.datasource.DefaultDataSource;
 import androidx.media3.datasource.DefaultHttpDataSource;
+import androidx.media3.datasource.ResolvingDataSource;
 import androidx.media3.datasource.cronet.CronetDataSource;
 import androidx.media3.datasource.cronet.CronetUtil;
 import androidx.media3.exoplayer.DefaultRenderersFactory;
@@ -101,6 +102,7 @@ public class ExoPlayerEngine extends MediaEngineBase implements Player.Listener 
 	private final ExoPlayer player;
 	private final AudioEffects audioEffects;
 	private volatile PlayableItem source;
+	private volatile String sourceUserAgent;
 	private boolean preparing;
 	private boolean buffering;
 	private boolean isHls;
@@ -108,7 +110,14 @@ public class ExoPlayerEngine extends MediaEngineBase implements Player.Listener 
 
 	public ExoPlayerEngine(Context ctx, Listener listener) {
 		super(listener);
-		DefaultDataSource.Factory dsFactory = new DefaultDataSource.Factory(ctx, httpDsFactory);
+		DataSource.Factory agentDsFactory = new ResolvingDataSource.Factory(httpDsFactory, spec -> {
+			String agent = sourceUserAgent;
+			if ((agent == null) || agent.trim().isEmpty()) return spec;
+			java.util.Map<String, String> headers = new java.util.HashMap<>(spec.httpRequestHeaders);
+			headers.put("User-Agent", agent);
+			return spec.withRequestHeaders(headers);
+		});
+		DefaultDataSource.Factory dsFactory = new DefaultDataSource.Factory(ctx, agentDsFactory);
 		MediaSource.Factory msFactory =
 				new DefaultMediaSourceFactory(ctx).setDataSourceFactory(dsFactory);
 		player = new ExoPlayer.Builder(ctx, new DefaultRenderersFactory(ctx) {
@@ -163,6 +172,7 @@ public class ExoPlayerEngine extends MediaEngineBase implements Player.Listener 
 		if (this.source == null) stopped(false);
 		else stop();
 		this.source = source;
+		this.sourceUserAgent = source.getUserAgent();
 		accessor.sourceChanged(source);
 		preparing = true;
 		buffering = false;
