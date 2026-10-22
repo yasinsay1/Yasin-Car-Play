@@ -112,3 +112,17 @@ jobs:
           path: dist/arm64/*.apk
           retention-days: 30
           if-no-files-found: error
+
+      - name: APK'yi Release olarak yayinla (telefondan tek dokunusla indirme)
+        if: github.event_name != 'pull_request'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="son-surum-${GITHUB_REF_NAME//\//-}"
+          cp dist/arm64/*.apk "Yasin-Car-Play-arm64.apk"
+          gh release delete "$tag" --yes --cleanup-tag 2>/dev/null || true
+          gh release create "$tag" "Yasin-Car-Play-arm64.apk" \
+            --target "$GITHUB_SHA" --prerelease \
+            --title "Yasin Car Play ($GITHUB_REF_NAME ${GITHUB_SHA::7})" \
+            --notes "Otomatik derleme. Commit: $GITHUB_SHA"
