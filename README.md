@@ -14,9 +14,19 @@ Uygulama Google Play dışından (GitHub APK'sı) kurulduğu için Android Auto,
 
 1. Telefonda Android Auto ayarlarını aç, **Sürüm** satırına yaklaşık 10 kez dokunup geliştirici ayarlarını etkinleştir.
 2. Sağ üstteki üç nokta → **Geliştirici ayarları** → **Bilinmeyen kaynaklar** seçeneğini aç.
-3. Android Auto'yu kapatıp aracın bağlantısını yeniden kur. Uygulama yine görünmezse Android Auto ayarlarında **Başlatıcıyı özelleştir** bölümünden uygulamanın gizli olmadığını kontrol et.
+3. Android Auto'yu kapatıp aracın bağlantısını yeniden kur ve **Başlatıcıyı özelleştir** bölümünde uygulamanın gizli olmadığını kontrol et.
 
-Her derlemede `Android Auto manifest denetimi` adımı, APK içindeki Android Auto bildirimlerini (`com.google.android.gms.car.application`, projeksiyon servisi, `MediaBrowserService`, Car App Library servisi) kontrol eder; eksik varsa derleme hata verir.
+**Bu adımlar her telefonda yeterli değildir.** Fermata'nın geliştiricisi, Play dışı uygulamaların araç ekranında görünmediğini ve Android 14 ile sonrasında eski çözümün çalışmadığını belirtiyor ([tartışma](https://github.com/AndreyPavlenko/Fermata/discussions/432)). Bildirilen çözümler kök (Magisk + LSPosed) gerektirir ya da bilgisayarda Desktop Head Unit (DHU) oturumu ister. Kök gerektirmeyen resmî dağıtım yolu, uygulamanın Google Play iç/kapalı test kanalından yüklenmesidir.
+
+### Uygulamadaki Android Auto yolları
+
+| Yol | Sınıf | Android Auto'da resmî destek |
+| --- | --- | --- |
+| Ses oynatıcı | `FermataMediaService` (`MediaBrowserService`) | Evet, medya kategorisi (yalnızca ses) |
+| Tam arayüz | `CarService` (`aauto.aar` içindeki eski Android Auto SDK'sı) | Hayır, resmî Android for Cars kategorisi değil |
+| Ekran yansıtma | `MirrorService`, `MirrorServiceFS` (navigasyon şablonu + ekran kaydı) | Hayır, gerçek bir navigasyon uygulaması değil |
+
+Her derlemedeki `Android Auto manifest denetimi` adımı yalnızca bu bildirimlerin APK içinde bulunduğunu kontrol eder. Uygulamanın Android Auto'da görüneceğini garanti etmez.
 
 ## Video ve sürüş güvenliği
 
