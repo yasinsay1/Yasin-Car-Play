@@ -88,6 +88,12 @@ jobs:
           ./gradlew fermata:packageAutoReleaseUniversalApk -PABI=arm64-v8a "${ARGS[@]}" 2>&1 | tee build.log
           mv $out/*.apk dist/arm64/
 
+      - name: Android Auto manifest denetimi
+        shell: bash
+        run: |
+          chmod +x .github/scripts/verify-android-auto-manifest.sh
+          .github/scripts/verify-android-auto-manifest.sh dist/arm64/*.apk
+
       - name: Hata logunu build-logs dalina yaz
         if: failure()
         shell: bash
