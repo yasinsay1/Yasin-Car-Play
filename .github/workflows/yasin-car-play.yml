@@ -1,0 +1,114 @@
+name: Yasin Car Play APK
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+env:
+  APP_NAME: Yasin Car Play
+  APP_ID: com.yasincarplay
+  JAVA_VERSION: '17'
+  JAVA_DISTRIBUTION: 'temurin'
+
+jobs:
+  build:
+    name: Yasin Car Play APK derle
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Read versions from version catalog
+        run: |
+          ver_file=gradle/libs.versions.toml
+          version() { grep -Po "(?<=$1).+" $ver_file |  sed -e 's/[= "]//g'; }
+          app_version="$(version appVersionName)-$(git rev-parse --short HEAD)"
+          sed -ri "s/appVersionName.+/appVersionName = \"$app_version\"/" $ver_file
+          echo "APP_VERSION=$app_version" >> $GITHUB_ENV
+          echo "ANDROID_NDK_VERSION=$(version ndkVersion)" >> $GITHUB_ENV
+
+      - name: Artifact eki
+        run: echo "ARTIFACT_SFX=" >> "$GITHUB_ENV"
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools'
+
+      - name: Cache Android NDK
+        uses: actions/cache@v4
+        with:
+          path: /usr/local/lib/android/sdk/ndk/${{ env.ANDROID_NDK_VERSION }}
+          key: ${{ runner.os }}-android-ndk-${{ env.ANDROID_NDK_VERSION }}
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Create keystore and local.properties
+        run: |
+          [ -z "${{ secrets.CI_KEYSTORE }}" ] && exit 0
+          echo "${{ secrets.CI_KEYSTORE }}" | base64 -d > keystore.jks
+
+          cat > local.properties <<EOF
+          storeFile=$(pwd)/keystore.jks
+          keyAlias=${{ secrets.CI_ALIAS }}
+          keyPassword=${{ secrets.CI_KEY_PWD }}
+          storePassword=${{ secrets.CI_KEYSTORE_PWD }}
+          EOF
+
+      - name: Build APKs
+        shell: bash
+        env:
+          NO_GS: true
+        run: |
+          out=fermata/build/outputs/apk_from_bundle/autoRelease
+          mkdir -p dist/arm64
+          echo "App name: $APP_NAME"
+          ARGS=(--build-cache --stacktrace "-PAPP_NAME=$APP_NAME" "-PAPP_ID=$APP_ID")
+          ./gradlew fermata:packageAutoReleaseUniversalApk -PABI=arm64-v8a "${ARGS[@]}" 2>&1 | tee build.log
+          mv $out/*.apk dist/arm64/
+
+      - name: Hata logunu build-logs dalina yaz
+        if: failure()
+        shell: bash
+        run: |
+          mkdir -p /tmp/bl && cd /tmp/bl
+          git init -q && git checkout -q -b build-logs
+          git config user.name "github-actions" && git config user.email "actions@users.noreply.github.com"
+          {
+            echo "run: $GITHUB_RUN_ID  sha: $GITHUB_SHA"
+            echo "=== ERRORS ==="
+            grep -nE "error:|FAILED|What went wrong|Caused by|Exception|Could not" "$GITHUB_WORKSPACE/build.log" | head -80
+            echo "=== LAST 150 LINES ==="
+            tail -150 "$GITHUB_WORKSPACE/build.log"
+          } > last-failure.txt 2>&1 || true
+          git add last-failure.txt && git commit -q -m "Build log $GITHUB_RUN_ID"
+          git push -q -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}" build-logs
+
+      - name: Upload arm64 APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Yasin-Car-Play-${{ env.APP_VERSION }}-arm64
+          path: dist/arm64/*.apk
+          retention-days: 30
+          if-no-files-found: error
