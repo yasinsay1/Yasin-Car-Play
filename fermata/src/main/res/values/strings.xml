@@ -252,6 +252,21 @@
     <string name="favorites_remove">Remove from favorites</string>
     <string name="mark_watched">Mark as watched</string>
     <string name="mark_unwatched">Mark as unwatched</string>
+
+    <!-- Home Screen -->
+    <string name="home_screen">Ana Ekran</string>
+    <string name="home_header_title">Yasin Car Play</string>
+    <string name="home_header_subtitle">Ana ekran - 4 hızlı erişim</string>
+    <string name="tv_channels">TV Kanalları</string>
+    <string name="tv_subtitle">Canlı TV kanallarını izleyin</string>
+    <string name="radio_stations">Radyo İstasyonları</string>
+    <string name="radio_subtitle">Canlı radyo dinleyin</string>
+    <string name="music_library">Müzik Kütüphanesi</string>
+    <string name="music_subtitle">Müzik dosyalarınızı yönetin</string>
+    <string name="video_library">Video Kütüphanesi</string>
+    <string name="video_subtitle">Video dosyalarınızı yönetin</string>
+    <string name="tv_unavailable">TV eklentisi yüklü değil</string>
+    <string name="radio_unavailable">Radyo eklentisi yüklü değil</string>
     <string name="preferred_media_engine">Preferred media engine</string>
     <string name="by_default">Default</string>
 

@@ -50,7 +50,7 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
         with:
-          packages: 'platform-tools'
+          packages: 'platform-tools platforms;android-36 build-tools;36.0.0'
 
       - name: Cache Android NDK
         uses: actions/cache@v4
@@ -84,9 +84,9 @@ jobs:
           out=fermata/build/outputs/apk_from_bundle/autoRelease
           mkdir -p dist/arm64
           echo "App name: $APP_NAME"
-          ARGS=(--build-cache --stacktrace "-PAPP_NAME=$APP_NAME" "-PAPP_ID=$APP_ID")
+          ARGS=(--build-cache --stacktrace "-Dorg.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1024m" "-PAPP_NAME=$APP_NAME" "-PAPP_ID=$APP_ID")
           ./gradlew fermata:packageAutoReleaseUniversalApk -PABI=arm64-v8a "${ARGS[@]}" 2>&1 | tee build.log
-          mv $out/*.apk dist/arm64/
+          if [ -d "$out" ]; then mv $out/*.apk dist/arm64/; else find fermata/build/outputs -type f -name "*.apk" -exec cp {} dist/arm64/ \; ; fi
 
       - name: Android Auto manifest denetimi
         shell: bash

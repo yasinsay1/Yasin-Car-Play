@@ -114,6 +114,7 @@ import me.aap.fermata.media.service.MediaSessionCallbackAssistant;
 import me.aap.fermata.ui.fragment.AudioEffectsFragment;
 import me.aap.fermata.ui.fragment.FavoritesFragment;
 import me.aap.fermata.ui.fragment.FoldersFragment;
+import me.aap.fermata.ui.fragment.HomeFragment;
 import me.aap.fermata.ui.fragment.MainActivityFragment;
 import me.aap.fermata.ui.fragment.MediaLibFragment;
 import me.aap.fermata.ui.fragment.NavBarMediator;
@@ -713,6 +714,8 @@ public class MainActivityDelegate extends ActivityDelegate
 			return new FoldersFragment();
 		} else if (id == R.id.favorites_fragment) {
 			return new FavoritesFragment();
+		} else if (id == R.id.home_fragment) {
+			return new HomeFragment();
 		} else if (id == R.id.playlists_fragment) {
 			return new PlaylistsFragment();
 		} else if (id == R.id.settings_fragment) {

@@ -115,5 +115,6 @@ dependencies {
     implementation libs.firebaseEncodersJson
     implementation libs.firebaseEncoders
     implementation libs.javaxInject
+    implementation libs.androidxCardview
     autoImplementation libs.androidxCarApp
 }

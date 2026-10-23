@@ -35,6 +35,9 @@ media3 = "1.11.1"
 # AndroidX Car
 androidxCar = "1.7.0"
 
+# AndroidX CardView
+androidxCardview = "1.0.0"
+
 # Google
 androidMaterial = "1.14.0"
 googlePlayFeatureDelivery = "2.1.0"
@@ -104,6 +107,9 @@ androidxWebkit                    = { group = "androidx.webkit",                
 
 # AndroidX Car
 androidxCarApp                    = { group = "androidx.car.app",                   name = "app",                           version.ref = "androidxCar" }
+
+# AndroidX CardView
+androidxCardview                   = { group = "androidx.cardview",                  name = "cardview",                      version.ref = "androidxCardview" }
 
 # AndroidX media3
 media3Exoplayer                   = { group = "androidx.media3",                    name = "media3-exoplayer",              version.ref = "media3" }
