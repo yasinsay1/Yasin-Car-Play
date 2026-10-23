@@ -9,17 +9,25 @@ android {
 ext {
     addons = [
             [
-                    name : 'tv',
-                    icon : 'tv',
-                    class: 'me.aap.fermata.addon.tv.TvAddon',
+                    name : "tv",
+                    icon : "tv",
+                    class: "me.aap.fermata.addon.tv.TvAddon",
                     order: 1
+            ],
+            [
+                    name : "radio",
+                    icon : "tv",
+                    class: "me.aap.fermata.addon.tv.RadioAddon",
+                    order: 2,
+                    hasSettings: false,
+                    depends: "tv"
             ]
     ]
 }
 
 dependencies {
-    implementation project(':utils')
-    implementation project(':fermata')
+    implementation project(":utils")
+    implementation project(":fermata")
     implementation libs.androidxMedia
     implementation libs.androidxAppcompat
     implementation libs.androidMaterial

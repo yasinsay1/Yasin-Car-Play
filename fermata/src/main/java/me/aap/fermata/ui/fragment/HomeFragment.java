@@ -70,7 +70,7 @@ public class HomeFragment extends MainActivityFragment {
 
 	/** Live radio streams are provided by the same TV / live-stream add-on. */
 	private void openRadio() {
-		if (hasTvAddon()) openFragment(R.id.tv_fragment);
+		if (hasRadioAddon()) openFragment(R.id.radio_fragment);
 		else showUnavailable(R.string.radio_unavailable);
 	}
 
@@ -86,6 +86,10 @@ public class HomeFragment extends MainActivityFragment {
 
 	private static boolean hasTvAddon() {
 		return FermataApplication.get().getAddonManager().hasAddon(R.id.tv_fragment);
+	}
+
+	private static boolean hasRadioAddon() {
+		return FermataApplication.get().getAddonManager().hasAddon(R.id.radio_fragment);
 	}
 
 	private void showUnavailable(int message) {
