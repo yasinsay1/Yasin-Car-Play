@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Yasin Car Play: siyah zemin + arka planda TV -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:angle="270"
+                android:endColor="#000000"
+                android:startColor="#1B1F29"
+                android:type="linear" />
+        </shape>
+    </item>
+    <item android:drawable="@drawable/yasin_tv" />
+</layer-list>
