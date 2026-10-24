@@ -234,7 +234,9 @@ public class RadioFragment extends MainActivityFragment implements FermataServic
 
 	/** Reads every M3U source and returns all radio stations, de-duplicated and sorted by name. */
 	private FutureSupplier<List<Station>> collectStations(DefaultMediaLib l) {
-		TvRootItem root = rootItem(l);
+		// The interface types are used on purpose: the implementing classes are not public.
+		BrowsableItem root = rootItem(l);
+		Favorites fav = l.getFavorites();
 		List<TvM3uTrackItem> tracks = new ArrayList<>();
 
 		return root.getUnsortedChildren().then(children -> forEach(child -> {
@@ -247,7 +249,7 @@ public class RadioFragment extends MainActivityFragment implements FermataServic
 					return completedVoid();
 				}, children))
 				// Favorites must be loaded before the heart icons can be drawn.
-				.then(v -> l.getFavorites().getUnsortedChildren().ifFail(err -> {
+				.then(v -> fav.getUnsortedChildren().ifFail(err -> {
 					Log.e(err, "Failed to load favorites");
 					return Collections.<Item>emptyList();
 				}))
@@ -396,7 +398,9 @@ public class RadioFragment extends MainActivityFragment implements FermataServic
 	}
 
 	private boolean isFavorite(Station s) {
-		return (lib != null) && lib.getFavorites().isFavoriteItem(s.track);
+		if (lib == null) return false;
+		Favorites fav = lib.getFavorites();
+		return fav.isFavoriteItem(s.track);
 	}
 
 	private boolean isPlaying(Station s) {
