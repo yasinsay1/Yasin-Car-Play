@@ -1,13 +1,8 @@
 package me.aap.fermata.addon.tv;
 
-import static me.aap.utils.async.Async.forEach;
-import static me.aap.utils.async.Completed.completedVoid;
-
-import android.content.ContentResolver;
 import android.content.Context;
 import android.content.res.ColorStateList;
 import android.content.res.Configuration;
-import android.net.Uri;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -19,6 +14,7 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -30,19 +26,16 @@ import java.text.Collator;
 import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
-import java.util.Objects;
 
 import me.aap.fermata.addon.AddonManager;
-import me.aap.fermata.addon.tv.m3u.TvM3uItem;
-import me.aap.fermata.addon.tv.m3u.TvM3uTrackItem;
+import me.aap.fermata.addon.tv.radio.RadioBrowserApi;
+import me.aap.fermata.addon.tv.radio.RadioCacheManager;
+import me.aap.fermata.addon.tv.radio.RadioStation;
+import me.aap.fermata.addon.tv.radio.RadioStationItem;
 import me.aap.fermata.media.lib.DefaultMediaLib;
-import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Favorites;
-import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.service.FermataServiceUiBinder;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
@@ -51,16 +44,15 @@ import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.log.Log;
 
 /**
- * Modern radio screen: every radio/audio station found in all M3U sources is listed on a single
- * screen as a large card (logo, name, favorite and play buttons), with search and a favorites
- * filter. TV/video channels are never listed here.
+ * Modern radio screen: 100 popular Turkey internet radio stations fetched from Radio Browser API,
+ * cached locally for fast offline/instant display, with search, favorites and dark station cards.
  */
 public class RadioFragment extends MainActivityFragment implements FermataServiceUiBinder.Listener {
 	/** Screen width (dp) needed for each grid column. */
 	private static final int COLUMN_WIDTH_DP = 400;
 
-	private final List<Station> allStations = new ArrayList<>();
-	private final List<Station> visible = new ArrayList<>();
+	private final List<StationHolderModel> allStations = new ArrayList<>();
+	private final List<StationHolderModel> visible = new ArrayList<>();
 	private final StationAdapter adapter = new StationAdapter();
 	private GridLayoutManager layoutManager;
 	private RecyclerView list;
@@ -153,7 +145,7 @@ public class RadioFragment extends MainActivityFragment implements FermataServic
 			if (getView() == null) return;
 			binder = a.getMediaServiceBinder();
 			binder.addBroadcastListener(this);
-			loadStations(true);
+			loadStations();
 		});
 	}
 
@@ -181,8 +173,7 @@ public class RadioFragment extends MainActivityFragment implements FermataServic
 			hideKeyboard();
 			return;
 		}
-		// Sources or favorites may have changed while the screen was hidden.
-		if (loaded && (binder != null)) loadStations(false);
+		if (loaded && (binder != null)) applyFilter();
 	}
 
 	@Override
@@ -191,91 +182,79 @@ public class RadioFragment extends MainActivityFragment implements FermataServic
 		if (l == null) return;
 		l.post(() -> {
 			for (int i = 0; i < visible.size(); i++) {
-				PlayableItem t = visible.get(i).track;
+				PlayableItem t = visible.get(i).item;
 				if (t.equals(oldItem) || t.equals(newItem)) adapter.notifyItemChanged(i);
 			}
 		});
 	}
 
 	// ---------------------------------------------------------------------------------------------
-	// Loading
+	// Loading & Caching Logic
 	// ---------------------------------------------------------------------------------------------
 
-	private void loadStations(boolean showLoading) {
+	private void loadStations() {
 		MainActivityDelegate a = getActivityDelegate();
 		if (a == null) return;
 		lib = (DefaultMediaLib) a.getLib();
+		Context ctx = requireContext();
 		int token = ++loadToken;
 
-		if (showLoading) {
+		if (allStations.isEmpty()) {
 			loaded = false;
 			loadFailed = false;
 			updateState();
 		}
 
-		DefaultMediaLib l = lib;
-		collectStations(l).main().onCompletion((result, err) -> {
-			if ((token != loadToken) || (getView() == null)) return;
-			allStations.clear();
+		// 1. Load from local JSON cache first
+		RadioCacheManager.loadCache(ctx).main().onSuccess(cached -> {
+			if (token != loadToken || getView() == null) return;
 
-			if ((err != null) || (result == null)) {
-				if (err != null) Log.e(err, "Failed to load radio stations");
-				else Log.e("Failed to load radio stations");
-				loadFailed = true;
-			} else {
+			if (!cached.isEmpty()) {
+				setStationList(cached);
+				loaded = true;
 				loadFailed = false;
-				allStations.addAll(result);
+				applyFilter();
 			}
 
-			loaded = true;
-			applyFilter();
+			// 2. Fetch fresh top 100 TR stations from Radio Browser API in background
+			RadioBrowserApi.fetchTurkeyStations().main().onCompletion((fresh, err) -> {
+				if (token != loadToken || getView() == null) return;
+
+				if (err != null || fresh == null || fresh.isEmpty()) {
+					if (allStations.isEmpty()) {
+						Log.e(err, "Failed to load radio stations from API and cache is empty");
+						loadFailed = true;
+						loaded = true;
+						updateState();
+					} else {
+						Log.w("Failed to refresh radio stations from API, using cached list");
+					}
+				} else {
+					setStationList(fresh);
+					loaded = true;
+					loadFailed = false;
+					applyFilter();
+					RadioCacheManager.saveCache(ctx, fresh);
+				}
+			});
 		});
 	}
 
-	/** Reads every M3U source and returns all radio stations, de-duplicated and sorted by name. */
-	private FutureSupplier<List<Station>> collectStations(DefaultMediaLib l) {
-		// The interface types are used on purpose: the implementing classes are not public.
-		BrowsableItem root = rootItem(l);
-		Favorites fav = l.getFavorites();
-		List<TvM3uTrackItem> tracks = new ArrayList<>();
+	private void setStationList(List<RadioStation> stations) {
+		allStations.clear();
+		RadioAddon addon = AddonManager.get().getAddon(RadioAddon.class);
+		RadioRootItem root = (addon != null && lib != null) ? addon.getRootItem(lib) : null;
 
-		return root.getUnsortedChildren().then(children -> forEach(child -> {
-					if (child instanceof TvM3uItem m3u) {
-						return m3u.getRadioTracks().ifFail(err -> {
-							Log.e(err, "Failed to read radio stations from source ", m3u);
-							return Collections.<TvM3uTrackItem>emptyList();
-						}).onSuccess(r -> tracks.addAll(r));
-					}
-					return completedVoid();
-				}, children))
-				// Favorites must be loaded before the heart icons can be drawn.
-				.then(v -> fav.getUnsortedChildren().ifFail(err -> {
-					Log.e(err, "Failed to load favorites");
-					return Collections.<Item>emptyList();
-				}))
-				.map(v -> toStations(tracks));
-	}
-
-	private static TvRootItem rootItem(DefaultMediaLib l) {
-		AddonManager am = AddonManager.get();
-		TvAddon tv = am.getAddon(TvAddon.class);
-		if (tv != null) return tv.getRootItem(l);
-		return Objects.requireNonNull(am.getAddon(RadioAddon.class)).getRootItem(l);
-	}
-
-	private static List<Station> toStations(List<TvM3uTrackItem> tracks) {
-		// The same stream listed in several sources is shown only once.
-		Map<String, Station> unique = new LinkedHashMap<>();
-		for (TvM3uTrackItem t : tracks) {
-			String key = String.valueOf(t.getResource().getRid());
-			if (!unique.containsKey(key)) unique.put(key, new Station(t));
+		for (RadioStation s : stations) {
+			if (root != null) {
+				RadioStationItem item = root.getOrCreateStationItem(s);
+				allStations.add(new StationHolderModel(item, s));
+			}
 		}
 
-		List<Station> result = new ArrayList<>(unique.values());
-		Collator collator = Collator.getInstance();
+		Collator collator = Collator.getInstance(new Locale("tr", "TR"));
 		collator.setStrength(Collator.PRIMARY);
-		Collections.sort(result, (a, b) -> collator.compare(a.name, b.name));
-		return result;
+		Collections.sort(allStations, (a, b) -> collator.compare(a.station.getName(), b.station.getName()));
 	}
 
 	// ---------------------------------------------------------------------------------------------
@@ -294,7 +273,7 @@ public class RadioFragment extends MainActivityFragment implements FermataServic
 		String q = normalize(query.trim());
 		visible.clear();
 
-		for (Station s : allStations) {
+		for (StationHolderModel s : allStations) {
 			if (favoritesOnly && !isFavorite(s)) continue;
 			if (!q.isEmpty() && !s.searchText.contains(q)) continue;
 			visible.add(s);
@@ -342,7 +321,6 @@ public class RadioFragment extends MainActivityFragment implements FermataServic
 		} else if (allStations.isEmpty()) {
 			showEmpty(me.aap.fermata.R.drawable.audiotrack, R.color.radio_accent,
 					ctx.getString(R.string.radio_empty_title), ctx.getString(R.string.radio_empty_message));
-			if (hasTvAddon()) showAction(ctx.getString(R.string.radio_open_tv));
 		} else if (!query.trim().isEmpty()) {
 			showEmpty(me.aap.fermata.R.drawable.search, R.color.radio_text_secondary,
 					ctx.getString(R.string.radio_no_results_title),
@@ -369,52 +347,54 @@ public class RadioFragment extends MainActivityFragment implements FermataServic
 
 	private void onEmptyAction() {
 		if (loadFailed) {
-			loadStations(true);
-			return;
+			loadStations();
 		}
-		MainActivityDelegate a = getActivityDelegate();
-		if ((a != null) && hasTvAddon()) a.showFragment(me.aap.fermata.R.id.tv_fragment);
-	}
-
-	private static boolean hasTvAddon() {
-		return AddonManager.get().getAddon(TvAddon.class) != null;
 	}
 
 	// ---------------------------------------------------------------------------------------------
 	// Actions
 	// ---------------------------------------------------------------------------------------------
 
-	private void play(Station s) {
+	private void play(StationHolderModel s) {
 		MainActivityDelegate a = getActivityDelegate();
 		if (a == null) return;
 		hideKeyboard();
 
-		if (s.track.equals(a.getCurrentPlayable())) {
-			// Already the current station: resumes it when paused, otherwise does nothing.
-			a.getMediaServiceBinder().playItem(s.track);
-		} else {
-			a.getBody().playItem(s.track);
+		if (!RadioBrowserApi.isSafeStreamUrl(s.station.getUrl())) {
+			Toast.makeText(requireContext(), "Geçersiz veya desteklenmeyen yayın adresi", Toast.LENGTH_SHORT).show();
+			return;
+		}
+
+		try {
+			if (s.item.equals(a.getCurrentPlayable())) {
+				a.getMediaServiceBinder().playItem(s.item);
+			} else {
+				a.getBody().playItem(s.item);
+			}
+		} catch (Exception e) {
+			Log.e(e, "Playback failed for station ", s.station.getName());
+			Toast.makeText(requireContext(), "Radyo yayını başlatılamadı", Toast.LENGTH_SHORT).show();
 		}
 	}
 
-	private boolean isFavorite(Station s) {
+	private boolean isFavorite(StationHolderModel s) {
 		if (lib == null) return false;
 		Favorites fav = lib.getFavorites();
-		return fav.isFavoriteItem(s.track);
+		return fav.isFavoriteItem(s.item);
 	}
 
-	private boolean isPlaying(Station s) {
+	private boolean isPlaying(StationHolderModel s) {
 		MainActivityDelegate a = getActivityDelegate();
-		return (a != null) && s.track.equals(a.getCurrentPlayable());
+		return (a != null) && s.item.equals(a.getCurrentPlayable());
 	}
 
-	private void toggleFavorite(Station s) {
+	private void toggleFavorite(StationHolderModel s) {
 		if (lib == null) return;
 		Favorites fav = lib.getFavorites();
-		FutureSupplier<Void> f = fav.isFavoriteItem(s.track) ? fav.removeItem(s.track) : fav.addItem(s.track);
+		FutureSupplier<Void> f = fav.isFavoriteItem(s.item) ? fav.removeItem(s.item) : fav.addItem(s.item);
 
 		f.main().onCompletion((v, err) -> {
-			if (err != null) Log.e(err, "Failed to update favorites: ", s.name);
+			if (err != null) Log.e(err, "Failed to update favorites: ", s.station.getName());
 			if (list == null) return;
 
 			if (favoritesOnly) {
@@ -458,19 +438,16 @@ public class RadioFragment extends MainActivityFragment implements FermataServic
 	// Model and adapter
 	// ---------------------------------------------------------------------------------------------
 
-	private static final class Station {
-		final TvM3uTrackItem track;
-		final String name;
-		final String group;
+	private static final class StationHolderModel {
+		final RadioStationItem item;
+		final RadioStation station;
 		final String searchText;
 
-		Station(TvM3uTrackItem track) {
-			this.track = track;
-			this.name = track.getName();
-			BrowsableItem p = track.getParent();
-			String g = (p instanceof me.aap.fermata.media.lib.M3uGroupItem) ? p.getName() : null;
-			this.group = ((g != null) && !g.trim().isEmpty()) ? g.trim() : null;
-			this.searchText = normalize(name + ' ' + ((group != null) ? group : ""));
+		StationHolderModel(RadioStationItem item, RadioStation station) {
+			this.item = item;
+			this.station = station;
+			String tags = station.getTags();
+			this.searchText = normalize(station.getName() + ' ' + (tags.isEmpty() ? "" : tags));
 		}
 	}
 
@@ -507,7 +484,7 @@ public class RadioFragment extends MainActivityFragment implements FermataServic
 		private final ImageView play;
 		private final TextView name;
 		private final TextView sub;
-		private Station bound;
+		private StationHolderModel bound;
 		private int bindSeq;
 
 		StationHolder(@NonNull View v) {
@@ -529,16 +506,17 @@ public class RadioFragment extends MainActivityFragment implements FermataServic
 			});
 		}
 
-		void bind(Station s) {
+		void bind(StationHolderModel s) {
 			bound = s;
 			int seq = ++bindSeq;
 			Context ctx = card.getContext();
 			boolean playing = isPlaying(s);
 
-			name.setText(s.name);
-			sub.setText(s.group);
-			sub.setVisibility((s.group != null) ? View.VISIBLE : View.GONE);
-			card.setContentDescription(ctx.getString(R.string.radio_play_station, s.name));
+			name.setText(s.station.getName());
+			String tags = s.station.getTags();
+			sub.setText(tags.isEmpty() ? "İnternet Radyosu" : tags);
+			sub.setVisibility(View.VISIBLE);
+			card.setContentDescription(ctx.getString(R.string.radio_play_station, s.station.getName()));
 			card.setBackgroundResource(
 					playing ? R.drawable.radio_card_bg_playing : R.drawable.radio_card_bg);
 
@@ -568,20 +546,16 @@ public class RadioFragment extends MainActivityFragment implements FermataServic
 			logo.setImageTintList(ColorStateList.valueOf(color(R.color.radio_accent)));
 		}
 
-		private void loadLogo(Station s, int seq) {
+		private void loadLogo(StationHolderModel s, int seq) {
 			DefaultMediaLib l = lib;
 			if (l == null) return;
+			String favicon = s.station.getFavicon();
+			if (favicon.isEmpty()) return;
 
-			s.track.getMediaDescription().main().onSuccess(md -> {
-				if ((bound != s) || (bindSeq != seq)) return;
-				Uri uri = md.getIconUri();
-				if ((uri == null) || ContentResolver.SCHEME_ANDROID_RESOURCE.equals(uri.getScheme())) return;
-
-				l.getBitmap(uri.toString(), true, true).main().onSuccess(bm -> {
-					if ((bm == null) || (bound != s) || (bindSeq != seq)) return;
-					logo.setImageTintList(null);
-					logo.setImageBitmap(bm);
-				});
+			l.getBitmap(favicon, true, true).main().onSuccess(bm -> {
+				if ((bm == null) || (bound != s) || (bindSeq != seq)) return;
+				logo.setImageTintList(null);
+				logo.setImageBitmap(bm);
 			});
 		}
 	}
