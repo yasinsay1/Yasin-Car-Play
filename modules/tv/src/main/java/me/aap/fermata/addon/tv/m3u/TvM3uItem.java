@@ -207,6 +207,25 @@ public class TvM3uItem extends M3uItem implements TvItem {
 		return false;
 	}
 
+	/**
+	 * Bu kaynaktaki tüm radyo/ses istasyonlarını (gruplar içindekiler dahil) düz bir liste olarak
+	 * verir. TV/video kanalları dahil edilmez. Liste yüklenene kadar beklenir.
+	 */
+	public FutureSupplier<List<TvM3uTrackItem>> getRadioTracks() {
+		return getData().get().map(d -> {
+			List<TvM3uTrackItem> result = new ArrayList<>();
+			if ((d == null) || (d.items == null)) return result;
+			for (Item i : d.items) {
+				if (i instanceof TvM3uTrackItem t) {
+					if (t.isRadio()) result.add(t);
+				} else if (i instanceof TvM3uGroupItem g) {
+					g.collectRadioTracks(result);
+				}
+			}
+			return result;
+		});
+	}
+
 	public FutureSupplier<TvM3uTrackItem> getTrack(int gid, int tid, @Nullable String uri) {
 		return super.getTrack(gid, tid, uri).cast();
 	}

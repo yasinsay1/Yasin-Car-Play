@@ -24,4 +24,24 @@
     <string name="connection_settings">Connection settings</string>
 
     <string name="err_failed_to_add_tv_source">Failed to add source: %1$s</string>
+
+    <string name="radio_search_hint">Search radio stations</string>
+    <string name="radio_clear_search">Clear search</string>
+    <string name="radio_filter_all">All</string>
+    <string name="radio_filter_favorites">Favorites</string>
+    <string name="radio_station_count">%1$d stations</string>
+    <string name="radio_loading">Loading radio stations…</string>
+    <string name="radio_empty_title">No radio stations found</string>
+    <string name="radio_empty_message">Your M3U sources contain no radio or audio streams. Add an M3U list from the TV section. Audio streams (mp3, aac…), entries marked TYPE=AUDIO and entries with \"radio\", \"radyo\" or \"FM\" in the name or group are treated as radio.</string>
+    <string name="radio_open_tv">Open TV sources</string>
+    <string name="radio_no_results_title">No results</string>
+    <string name="radio_no_results_message">No station matches \"%1$s\".</string>
+    <string name="radio_no_favorites_title">No favorite stations yet</string>
+    <string name="radio_no_favorites_message">Tap the heart on a station to add it to your favorites.</string>
+    <string name="radio_error_title">Could not load radio stations</string>
+    <string name="radio_error_message">Something went wrong while reading your sources. Please try again.</string>
+    <string name="radio_retry">Try again</string>
+    <string name="radio_add_favorite">Add to favorites</string>
+    <string name="radio_remove_favorite">Remove from favorites</string>
+    <string name="radio_play_station">Play %1$s</string>
 </resources>

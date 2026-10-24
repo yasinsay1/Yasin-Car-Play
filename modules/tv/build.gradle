@@ -28,5 +28,6 @@ dependencies {
     implementation project(':fermata')
     implementation libs.androidxMedia
     implementation libs.androidxAppcompat
+    implementation libs.androidxSwiperefreshlayout
     implementation libs.androidMaterial
 }

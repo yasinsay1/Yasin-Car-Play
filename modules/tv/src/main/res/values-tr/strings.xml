@@ -17,4 +17,24 @@
     <string name="connection_settings">Bağlantı ayarları</string>
 
     <string name="err_failed_to_add_tv_source">Kaynak eklenemedi: %1$s</string>
+
+    <string name="radio_search_hint">Radyo istasyonu ara</string>
+    <string name="radio_clear_search">Aramayı temizle</string>
+    <string name="radio_filter_all">Tümü</string>
+    <string name="radio_filter_favorites">Favoriler</string>
+    <string name="radio_station_count">%1$d istasyon</string>
+    <string name="radio_loading">Radyo istasyonları yükleniyor…</string>
+    <string name="radio_empty_title">Radyo istasyonu bulunamadı</string>
+    <string name="radio_empty_message">M3U kaynaklarınızda radyo veya ses yayını yok. TV bölümünden bir M3U listesi ekleyin. Ses yayınları (mp3, aac…), TYPE=AUDIO olanlar ve adında ya da grubunda \"radyo\", \"radio\" veya \"FM\" geçenler radyo sayılır.</string>
+    <string name="radio_open_tv">TV kaynaklarını aç</string>
+    <string name="radio_no_results_title">Sonuç bulunamadı</string>
+    <string name="radio_no_results_message">\"%1$s\" ile eşleşen istasyon yok.</string>
+    <string name="radio_no_favorites_title">Henüz favori istasyon yok</string>
+    <string name="radio_no_favorites_message">Bir istasyonun kalp simgesine dokunarak favorilere ekleyebilirsiniz.</string>
+    <string name="radio_error_title">Radyo istasyonları yüklenemedi</string>
+    <string name="radio_error_message">Kaynaklar okunurken bir sorun oluştu. Lütfen tekrar deneyin.</string>
+    <string name="radio_retry">Tekrar dene</string>
+    <string name="radio_add_favorite">Favorilere ekle</string>
+    <string name="radio_remove_favorite">Favorilerden çıkar</string>
+    <string name="radio_play_station">%1$s istasyonunu çal</string>
 </resources>
