@@ -36,7 +36,7 @@ public interface MainActivityPrefs
 	int CLOCK_POS_RIGHT = 2;
 	int CLOCK_POS_CENTER = 3;
 
-	Pref<IntSupplier> THEME_MAIN = Pref.i("THEME_MAIN", THEME_CLASSIC);
+	Pref<IntSupplier> THEME_MAIN = Pref.i("THEME_MAIN", THEME_BLACK);
 	Pref<BooleanSupplier> HIDE_BARS = Pref.b("HIDE_BARS", false);
 	Pref<BooleanSupplier> FULLSCREEN = Pref.b("FULLSCREEN", false);
 	Pref<BooleanSupplier> SHOW_PG_UP_DOWN = Pref.b("SHOW_PG_UP_DOWN", true);
