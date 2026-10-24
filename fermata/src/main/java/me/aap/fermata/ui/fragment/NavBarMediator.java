@@ -94,6 +94,10 @@ public class NavBarMediator extends PrefNavBarMediator
 					items.add(create(ctx, R.id.playlists_fragment, R.drawable.playlist, R.string.playlists,
 							items.size() < max));
 					continue;
+				case "home":
+					items.add(create(ctx, R.id.home_fragment, me.aap.utils.R.drawable.home, R.string.home_screen,
+							items.size() < max));
+					continue;
 				case "menu":
 					items.add(create(ctx, R.id.menu, me.aap.utils.R.drawable.menu, R.string.menu,
 							items.size() < max));
@@ -324,6 +328,7 @@ public class NavBarMediator extends PrefNavBarMediator
 		names.add("folders");
 		names.add("favorites");
 		names.add("playlists");
+		names.add("home");
 		for (AddonInfo ai : BuildConfig.ADDONS) {
 			FermataAddon a = amgr.getAddon(ai.className);
 			if (a instanceof FermataFragmentAddon) names.add(ai.className);
@@ -336,6 +341,7 @@ public class NavBarMediator extends PrefNavBarMediator
 		if (id == R.id.folders_fragment) return "folders";
 		else if (id == R.id.favorites_fragment) return "favorites";
 		else if (id == R.id.playlists_fragment) return "playlists";
+		else if (id == R.id.home_fragment) return "home";
 		else if (id == R.id.menu) return "menu";
 
 		AddonManager amgr = getAddonManager();
