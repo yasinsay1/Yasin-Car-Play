@@ -18,7 +18,6 @@ import me.aap.fermata.addon.tv.R;
 import java.util.ArrayList;
 import java.util.List;
 
-import me.aap.fermata.addon.tv.RadioRootItem;
 import me.aap.fermata.addon.tv.TvItem;
 import me.aap.fermata.addon.tv.TvRootItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
@@ -167,17 +166,11 @@ public class TvM3uItem extends M3uItem implements TvItem {
 		return me.aap.fermata.R.drawable.tv;
 	}
 
-	@Override
-	public FutureSupplier<List<Item>> listChildren() {
-		return getData().get().map(d -> {
-			if (getRoot() instanceof RadioRootItem) {
-				return filterRadioChildren(d.items);
-			}
-			return d.items;
-		});
-	}
-
-	public static List<Item> filterRadioChildren(List<Item> items) {
+	/**
+	 * Radyo/TV ayrımı burada yapılmaz: öğeler kimlikle önbelleğe alındığından TV ve Radyo aynı
+	 * örneği paylaşır. Süzme, ilgili ekranda (RadioFragment) yapılır.
+	 */
+	public static List<Item> filterRadioChildren(List<? extends Item> items) {
 		List<Item> result = new ArrayList<>(items.size());
 		for (Item item : items) {
 			if (item instanceof TvM3uTrackItem track) {
@@ -198,7 +191,16 @@ public class TvM3uItem extends M3uItem implements TvItem {
 	public boolean hasRadioTracks() {
 		var data = getData().get().peek();
 		if (data == null || data.items == null || data.items.isEmpty()) return true;
-		for (Item i : data.items) {
+		return containsRadio(data.items);
+	}
+
+	/** Liste yüklenene kadar bekler, sonra bu kaynakta radyo kanalı olup olmadığını döndürür. */
+	public FutureSupplier<Boolean> hasRadioTracksLoaded() {
+		return getData().get().map(d -> d != null && d.items != null && containsRadio(d.items));
+	}
+
+	private static boolean containsRadio(List<Item> items) {
+		for (Item i : items) {
 			if (i instanceof TvM3uTrackItem t && t.isRadio()) return true;
 			if (i instanceof TvM3uGroupItem g && g.hasRadioTracks()) return true;
 		}

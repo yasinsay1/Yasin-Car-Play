@@ -10,6 +10,7 @@ import android.view.animation.AnimationUtils;
 import androidx.annotation.NonNull;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.CancellationException;
 
 import me.aap.fermata.addon.AddonManager;
@@ -82,6 +83,19 @@ public class TvFragment extends MediaLibFragment {
 		TvM3uFileSystemProvider prov = new TvM3uFileSystemProvider();
 		prov.select(getMainActivity(), Collections.singletonList(TvM3uFileSystem.getInstance())).main()
 				.onFailure(this::failedToAddSource).onSuccess(this::addM3uSource);
+	}
+
+	/**
+	 * Ekrana özgü süzme noktası. TV ve Radyo aynı (önbellekteki) M3U öğelerini paylaştığından
+	 * süzme öğelerde değil, ilgili ekranda yapılır.
+	 */
+	protected List<? extends Item> filterChildren(BrowsableItem parent, List<? extends Item> children) {
+		return children;
+	}
+
+	/** Geri/yukarı gidişte ekranın kendi kök öğesine dönmesini sağlar. */
+	protected BrowsableItem mapParent(BrowsableItem parent) {
+		return parent;
 	}
 
 	public TvRootItem getRootItem() {
@@ -177,7 +191,18 @@ public class TvFragment extends MediaLibFragment {
 
 		@Override
 		public FutureSupplier<?> setParent(BrowsableItem parent, boolean userAction) {
-			return super.setParent(parent, userAction).onSuccess(v -> animateAddButton(parent));
+			BrowsableItem p = mapParent(parent);
+			return super.setParent(p, userAction).onSuccess(v -> animateAddButton(p));
+		}
+
+		@Override
+		public FutureSupplier<?> setParent(BrowsableItem parent, boolean userAction, boolean scroll) {
+			return super.setParent(mapParent(parent), userAction, scroll);
+		}
+
+		@Override
+		protected void setChildren(List<? extends Item> children) {
+			super.setChildren(filterChildren(getParent(), children));
 		}
 
 		public boolean isLongPressDragEnabled() {
