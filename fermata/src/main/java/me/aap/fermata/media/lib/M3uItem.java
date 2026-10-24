@@ -203,6 +203,11 @@ public class M3uItem extends BrowsableItemBase {
 							case "catchup-source":
 								trackCatchupSource = trim(l.substring(start, i));
 								break;
+							case "radio":
+								if ("true".equalsIgnoreCase(trim(l.substring(start, i))) || "1".equals(trim(l.substring(start, i)))) {
+									type = M3uTrackItem.TYPE_AUDIO;
+								}
+								break;
 						}
 					}
 				} else if (l.startsWith("#EXTGRP:")) {
@@ -366,7 +371,7 @@ public class M3uItem extends BrowsableItemBase {
 		return name.endsWith(".m3u");
 	}
 
-	protected FutureRef<Data> getData() {
+	public FutureRef<Data> getData() {
 		return data;
 	}
 
@@ -559,12 +564,12 @@ public class M3uItem extends BrowsableItemBase {
 		return (s == null) || (s = s.trim()).isEmpty() ? null : s;
 	}
 
-	protected static final class Data {
-		protected final String name;
-		protected final String subtitle;
-		protected final List<Item> items;
-		protected final Map<String, List<M3uTrackItem>> uriToTrack;
-		protected final String cover;
+	public static final class Data {
+		public final String name;
+		public final String subtitle;
+		public final List<Item> items;
+		public final Map<String, List<M3uTrackItem>> uriToTrack;
+		public final String cover;
 
 		Data(String name, String subtitle, List<Item> items, Map<String, List<M3uTrackItem>> uriToTrack, String cover) {
 			this.name = name;

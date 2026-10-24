@@ -6,11 +6,16 @@ import static me.aap.utils.async.Completed.completedNull;
 
 import android.content.Context;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import me.aap.fermata.addon.tv.R;
+import me.aap.fermata.addon.tv.RadioRootItem;
 import me.aap.fermata.addon.tv.TvItem;
 import me.aap.fermata.addon.tv.TvRootItem;
 import me.aap.fermata.media.lib.M3uGroupItem;
 import me.aap.fermata.media.lib.M3uItem;
+import me.aap.fermata.media.lib.M3uTrackItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.text.SharedTextBuilder;
@@ -52,6 +57,29 @@ public class TvM3uGroupItem extends M3uGroupItem implements TvItem {
 	@Override
 	public int getIcon() {
 		return me.aap.fermata.R.drawable.tv;
+	}
+
+	@Override
+	protected FutureSupplier<List<Item>> listChildren() {
+		if (getRoot() instanceof RadioRootItem) {
+			List<Item> result = new ArrayList<>();
+			for (M3uTrackItem track : tracks) {
+				if (track instanceof TvM3uTrackItem tvTrack && tvTrack.isRadio()) {
+					result.add(tvTrack);
+				}
+			}
+			return completed(result);
+		}
+		return super.listChildren();
+	}
+
+	public boolean hasRadioTracks() {
+		for (M3uTrackItem track : tracks) {
+			if (track instanceof TvM3uTrackItem tvTrack && tvTrack.isRadio()) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	@Override

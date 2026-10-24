@@ -116,6 +116,24 @@ public class M3uTrackItem extends PlayableItemBase {
 		return (type & TYPE_VIDEO) != 0;
 	}
 
+	public boolean isRadio() {
+		if ((type & TYPE_AUDIO) != 0 && (type & TYPE_VIDEO) == 0) return true;
+		if (isRadioText(getName())) return true;
+		if (isRadioText(genre)) return true;
+		Item parent = getParent();
+		if (parent instanceof M3uGroupItem) {
+			if (isRadioText(parent.getName())) return true;
+		}
+		return false;
+	}
+
+	private static boolean isRadioText(String text) {
+		if (text == null || text.isEmpty()) return false;
+		String lower = text.toLowerCase(java.util.Locale.ROOT);
+		return lower.contains("radio") || lower.contains("radyo")
+				|| lower.contains(" fm") || lower.startsWith("fm ") || lower.endsWith(" fm");
+	}
+
 	@Override
 	public boolean isStream() {
 		return (type & TYPE_STREAM) != 0;
