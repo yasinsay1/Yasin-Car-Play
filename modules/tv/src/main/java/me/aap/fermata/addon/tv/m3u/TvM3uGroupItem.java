@@ -67,6 +67,13 @@ public class TvM3uGroupItem extends M3uGroupItem implements TvItem {
 		return false;
 	}
 
+	/** Bu gruptaki radyo/ses istasyonlarını verilen listeye ekler. */
+	void collectRadioTracks(List<TvM3uTrackItem> out) {
+		for (M3uTrackItem track : tracks) {
+			if (track instanceof TvM3uTrackItem tvTrack && tvTrack.isRadio()) out.add(tvTrack);
+		}
+	}
+
 	@Override
 	protected FutureSupplier<String> buildSubtitle() {
 		Context ctx = dynCtx(getLib().getContext());

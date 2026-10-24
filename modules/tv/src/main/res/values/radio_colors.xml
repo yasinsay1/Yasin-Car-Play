@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="radio_bg">#000000</color>
+    <color name="radio_card">#161616</color>
+    <color name="radio_card_stroke">#2A2A2A</color>
+    <color name="radio_card_playing">#0B2430</color>
+    <color name="radio_accent">#29B6F6</color>
+    <color name="radio_on_accent">#00131C</color>
+    <color name="radio_text">#FFFFFF</color>
+    <color name="radio_text_secondary">#9E9E9E</color>
+    <color name="radio_field">#1E1E1E</color>
+    <color name="radio_logo_bg">#262626</color>
+    <color name="radio_favorite">#FF5252</color>
+</resources>
