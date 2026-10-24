@@ -96,7 +96,7 @@
                         android:layout_height="24dp"
                         android:layout_gravity="center_vertical"
                         android:layout_marginStart="8dp"
-                        android:src="@android:drawable/ic_menu_forward"
+                        android:src="@drawable/ic_card_arrow"
                         android:tint="#FFFFFF" />
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
@@ -154,7 +154,7 @@
                         android:layout_height="24dp"
                         android:layout_gravity="center_vertical"
                         android:layout_marginStart="8dp"
-                        android:src="@android:drawable/ic_menu_forward"
+                        android:src="@drawable/ic_card_arrow"
                         android:tint="#FFFFFF" />
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
@@ -212,7 +212,7 @@
                         android:layout_height="24dp"
                         android:layout_gravity="center_vertical"
                         android:layout_marginStart="8dp"
-                        android:src="@android:drawable/ic_menu_forward"
+                        android:src="@drawable/ic_card_arrow"
                         android:tint="#FFFFFF" />
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
@@ -270,7 +270,7 @@
                         android:layout_height="24dp"
                         android:layout_gravity="center_vertical"
                         android:layout_marginStart="8dp"
-                        android:src="@android:drawable/ic_menu_forward"
+                        android:src="@drawable/ic_card_arrow"
                         android:tint="#FFFFFF" />
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
