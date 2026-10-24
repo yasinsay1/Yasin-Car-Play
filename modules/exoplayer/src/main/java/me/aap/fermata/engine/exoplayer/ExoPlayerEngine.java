@@ -30,6 +30,7 @@ import androidx.media3.datasource.DefaultHttpDataSource;
 import androidx.media3.datasource.ResolvingDataSource;
 import androidx.media3.datasource.cronet.CronetDataSource;
 import androidx.media3.datasource.cronet.CronetUtil;
+import androidx.media3.exoplayer.DefaultLoadControl;
 import androidx.media3.exoplayer.DefaultRenderersFactory;
 import androidx.media3.exoplayer.ExoPlayer;
 import androidx.media3.exoplayer.audio.AudioSink;
@@ -120,6 +121,15 @@ public class ExoPlayerEngine extends MediaEngineBase implements Player.Listener 
 		DefaultDataSource.Factory dsFactory = new DefaultDataSource.Factory(ctx, agentDsFactory);
 		MediaSource.Factory msFactory =
 				new DefaultMediaSourceFactory(ctx).setDataSourceFactory(dsFactory);
+		DefaultLoadControl loadControl = new DefaultLoadControl.Builder()
+				.setBufferDurationsMs(
+						15000,
+						50000,
+						500,
+						1000
+				)
+				.setPrioritizeTimeOverSizeThresholds(true)
+				.build();
 		player = new ExoPlayer.Builder(ctx, new DefaultRenderersFactory(ctx) {
 			{
 				setEnableDecoderFallback(true);
@@ -138,7 +148,7 @@ public class ExoPlayerEngine extends MediaEngineBase implements Player.Listener 
 						.setAudioProcessorChain(
 								new DefaultAudioSink.DefaultAudioProcessorChain(audioProc)).build();
 			}
-		}).setMediaSourceFactory(msFactory).build();
+		}).setMediaSourceFactory(msFactory).setLoadControl(loadControl).build();
 		player.addListener(this);
 		audioEffects = AudioEffects.create(0, player.getAudioSessionId());
 
