@@ -345,6 +345,15 @@ public class MainActivityDelegate extends ActivityDelegate
 			}
 		}
 
+		// Yasin Car Play: telefon arayüzü her açılışta ana ekranı gösterir (son oynatılana
+		// otomatik dönülmez). Android Auto (araç) arayüzünün davranışı değişmez.
+		if (!isCarActivity()) {
+			setActiveNavItemId(R.id.home_fragment);
+			showFragment(R.id.home_fragment);
+			checkUpdates();
+			return;
+		}
+
 		FutureSupplier<Boolean> f = goToCurrent().onCompletion((ok, fail1) -> {
 			if ((fail1 != null) && !isCancellation(fail1)) {
 				Log.e(fail1, "Last played track not found");
