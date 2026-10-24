@@ -1425,16 +1425,16 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	private FutureSupplier<PlayableItem> prepareItem(PlayableItem i) {
 		if (i == null) return completedNull();
 
-		// Make sure metadata is loaded
-		FutureSupplier<Long> getDur = i.getDuration();
-
 		// Make sure HTTP server is started
 		if (i.isNetResource()) {
 			FutureSupplier<NetServer> start = lib.getVfsManager().getNetServer();
-			if (!start.isDone()) return start.and(getDur, (s, d) -> {
-			}).map(v -> i).main();
+			if (!start.isDone()) return start.map(v -> i).main();
 		}
 
+		if (i.isStream()) return completed(i).main();
+
+		// Make sure metadata is loaded
+		FutureSupplier<Long> getDur = i.getDuration();
 		if (!getDur.isDone()) return getDur.map(d -> i).timeout(5000, () -> i).main();
 		return completed(i).main();
 	}
