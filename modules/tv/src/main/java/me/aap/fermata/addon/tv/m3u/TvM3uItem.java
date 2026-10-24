@@ -15,8 +15,13 @@ import androidx.annotation.Nullable;
 
 import me.aap.fermata.BuildConfig;
 import me.aap.fermata.addon.tv.R;
+import java.util.ArrayList;
+import java.util.List;
+
+import me.aap.fermata.addon.tv.RadioRootItem;
 import me.aap.fermata.addon.tv.TvItem;
 import me.aap.fermata.addon.tv.TvRootItem;
+import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.lib.DefaultMediaLib;
 import me.aap.fermata.media.lib.M3uGroupItem;
 import me.aap.fermata.media.lib.M3uItem;
@@ -160,6 +165,44 @@ public class TvM3uItem extends M3uItem implements TvItem {
 	@Override
 	public int getIcon() {
 		return me.aap.fermata.R.drawable.tv;
+	}
+
+	@Override
+	public FutureSupplier<List<Item>> listChildren() {
+		return getData().get().map(d -> {
+			if (getRoot() instanceof RadioRootItem) {
+				return filterRadioChildren(d.items);
+			}
+			return d.items;
+		});
+	}
+
+	public static List<Item> filterRadioChildren(List<Item> items) {
+		List<Item> result = new ArrayList<>(items.size());
+		for (Item item : items) {
+			if (item instanceof TvM3uTrackItem track) {
+				if (track.isRadio()) {
+					result.add(track);
+				}
+			} else if (item instanceof TvM3uGroupItem group) {
+				if (group.hasRadioTracks()) {
+					result.add(group);
+				}
+			} else {
+				result.add(item);
+			}
+		}
+		return result;
+	}
+
+	public boolean hasRadioTracks() {
+		var data = getData().get().peek();
+		if (data == null || data.items == null || data.items.isEmpty()) return true;
+		for (Item i : data.items) {
+			if (i instanceof TvM3uTrackItem t && t.isRadio()) return true;
+			if (i instanceof TvM3uGroupItem g && g.hasRadioTracks()) return true;
+		}
+		return false;
 	}
 
 	public FutureSupplier<TvM3uTrackItem> getTrack(int gid, int tid, @Nullable String uri) {

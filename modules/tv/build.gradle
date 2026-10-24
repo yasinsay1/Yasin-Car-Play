@@ -13,6 +13,12 @@ ext {
                     icon : 'tv',
                     class: 'me.aap.fermata.addon.tv.TvAddon',
                     order: 1
+            ],
+            [
+                    name : 'radio',
+                    icon : 'audiotrack',
+                    class: 'me.aap.fermata.addon.tv.RadioAddon',
+                    order: 2
             ]
     ]
 }

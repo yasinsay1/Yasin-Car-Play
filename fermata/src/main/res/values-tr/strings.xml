@@ -23,6 +23,7 @@
 
     <string name="addons">Eklentiler</string>
     <string name="addon_name_tv">TV</string>
+    <string name="addon_name_radio">Radyo</string>
     <string name="addon_name_web_browser">Web tarayıcı</string>
     
     
