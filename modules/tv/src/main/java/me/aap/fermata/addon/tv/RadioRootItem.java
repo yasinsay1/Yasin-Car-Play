@@ -1,6 +1,8 @@
 package me.aap.fermata.addon.tv;
 
+import static me.aap.utils.async.Async.forEach;
 import static me.aap.utils.async.Completed.completed;
+import static me.aap.utils.async.Completed.completedVoid;
 
 import androidx.annotation.Nullable;
 
@@ -33,18 +35,18 @@ public class RadioRootItem extends TvRootItem implements RadioItem {
 
 	@Override
 	protected FutureSupplier<List<Item>> listChildren() {
-		return super.listChildren().map(children -> {
-			List<Item> filtered = new ArrayList<>();
-			for (Item item : children) {
+		return super.listChildren().then(children -> {
+			List<Item> filtered = new ArrayList<>(children.size());
+			// Kaynaklar sırayla yüklenir; yüklenmemiş bir liste "radyo var" sayılmaz, beklenir.
+			return forEach(item -> {
 				if (item instanceof TvM3uItem m3u) {
-					if (m3u.hasRadioTracks()) {
-						filtered.add(m3u);
-					}
-				} else {
-					filtered.add(item);
+					return m3u.hasRadioTracksLoaded().onSuccess(has -> {
+						if (has) filtered.add(m3u);
+					});
 				}
-			}
-			return filtered;
+				filtered.add(item);
+				return completedVoid();
+			}, children).map(v -> filtered);
 		});
 	}
 }
