@@ -1435,6 +1435,8 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 			}).map(v -> i).main();
 		}
 
+		if (i.isStream() && !i.isVideo()) return completed(i).main();
+
 		if (!getDur.isDone()) return getDur.map(d -> i).timeout(5000, () -> i).main();
 		return completed(i).main();
 	}
